@@ -3,7 +3,7 @@ library(devtools)
 library(Seurat)
 library(dplyr)
 library(Matrix)
-csf.data=read.table('counts_TPM_ALL.csv',header=T,row.names=1,sep='\t')
+csf.data=read.table('<tpm.csv>',header=T,row.names=1,sep='\t')
 csf.data=log(csf.data+1)
 celltypes=unlist(lapply(colnames(csf.data), ExtractField, 1))
 table(celltypes)
@@ -31,30 +31,22 @@ PCHeatmap(object = csf, pc.use = 1, cells.use = 500, do.balanced = TRUE, label.c
 PCHeatmap(object = csf, pc.use = 1:20, cells.use = 500, do.balanced = TRUE, label.columns = FALSE,
 use.full = FALSE)
 PrintPCA(object = csf, pcs.print = 1:20, genes.print = 5, use.full = FALSE)
-# Determine statistically significant principal components
 csf <- JackStraw(object = csf, num.replicate = 100)
 JackStrawPlot(object = csf, PCs = 1:20)
 PCElbowPlot(object = csf)
-# Cluster the cells
 csf <- FindClusters(object = csf, reduction.type = 'pca', dims.use = 1:10, resolution = 0.6, print.output = 0,
 save.SNN = TRUE)
 PrintFindClustersParams(object = csf)
-# Run Non-linear dimensional reduction (tSNE)
 csf <- RunTSNE(object = csf, dims.use = 1:10, do.fast = TRUE, check_duplicates = FALSE)
 TSNEPlot(object = csf, do.label=T)
-# QC of each cluster
 VlnPlot(object = csf, features.plot = c('nGene', 'percent.mito'), nCol = 2,
 x.lab.rot = TRUE)
-## Cells in Cluster #3 that were characterized by low number of detected genes and low mitochondrial
-gene transcripts (indicating low-quality cells) were removed
 new.subset <- SubsetData(object = csf, ident.remove = "3")
 csf_v1 <- csf
 save(csf_v1, file = "./csf_v1_2018.Rda")
 csf <- new.subset
 csf <- FilterCells(object = csf, subset.names = c('nGene', 'percent.mito'), low.thresholds = c(200, -Inf),
 high.thresholds = c(6000, 0.025))
-## Additional round of clustering after SubsetData
-# re-running FindVariableGenes() and ScaleData()
 csf <- FindVariableGenes(object = csf, mean.function = ExpMean,
 dispersion.function = LogVMR, x.low.cutoff = 0.0125, x.high.cutoff = 3, y.cutoff = 0.5)
 length(x = csf@var.genes)
